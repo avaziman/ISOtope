@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Wasm Test</title>
+    </head>
+    <body>
+        <h1>Wasm Test</h1>
+        <div id="output"></div>
+
+        <script type="module">
+            // Load the wasm file and instantiate it
+            import init, { Sketch, BFGSSolver } from "./pkg/isotope.js"; // Replace with your actual Wasm package JS file name
+
+            async function runWasm() {
+                const wasm = await init();
+                // You can call exported functions from the wasm module here
+                const sketch = new Sketch();
+
+                try {
+                    const p1 = sketch.addPoint2(0, 0);
+                    const p2 = sketch.addPoint2(1, 0);
+                    const p3 = sketch.addPoint2(1, 1);
+                    // sketch.
+                    sketch.constrainAngleBetweenPoints(
+                        p1.clone(),
+                        p2.clone(),
+                        p3.clone(),
+                        Math.PI / 2,
+                    );
+
+                    const solver = new BFGSSolver();
+                    solver.solve(sketch);
+                    console.log("POINT 1", p1.x(), p1.y());
+                    console.log("POINT 2", p2.x(), p2.y());
+                    console.log("POINT 3", p3.x(), p3.y());
+                } catch (e) {
+                    console.log("ERROR", e);
+                    return;
+                }
+                console.log("OK");
+            }
+
+            runWasm().catch(console.error);
+        </script>
+    </body>
+</html>

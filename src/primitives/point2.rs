@@ -17,6 +17,21 @@ use super::{PrimitiveCell, PrimitiveLike};
 #[cfg_attr(feature = "tsify", wasm_bindgen)]
 pub struct UniquePoint2(pub(crate) Rc<RefCell<Point2>>);
 
+#[cfg_attr(feature = "tsify", wasm_bindgen)]
+impl UniquePoint2 {
+    pub fn clone(&self) -> UniquePoint2 {
+        UniquePoint2(self.0.clone())
+    }
+
+    pub fn x(&self) -> f64 {
+        self.0.borrow().x()
+    }
+
+    pub fn y(&self) -> f64 {
+        self.0.borrow().y()
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, PartialOrd, Serialize, Deserialize)]
 #[cfg_attr(feature = "tsify", derive(Tsify))]
 #[cfg_attr(feature = "tsify", tsify(into_wasm_abi, from_wasm_abi))]
