@@ -17,3 +17,6 @@ tsify = ["dep:tsify", "dep:wasm-bindgen"]
 [[bench]]
 name = "solvers"
 harness = false
+
+[lib]
+crate-type = ["cdylib", "rlib"]

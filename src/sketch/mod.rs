@@ -14,25 +14,143 @@ use crate::constraints::ConstraintCell;
 use crate::decompose::face::Face;
 use crate::decompose::{decompose_sketch, merge_faces};
 use crate::error::ISOTopeError;
-use crate::primitives::arc::Arc;
-use crate::primitives::line::Line;
-use crate::primitives::point2::Point2;
+use crate::primitives::arc::{Arc, UniqueArc};
+use crate::primitives::line::{Line, UniqueLine};
+use crate::primitives::point2::{Point2, UniquePoint2};
 use crate::primitives::{point2, PrimitiveCell};
 
 use super::constraints::ConstraintLike;
 
+#[cfg(feature = "tsify")]
+use wasm_bindgen::prelude::*;
+
 #[derive(Default, Debug, Clone, Serialize, Deserialize)]
+#[cfg_attr(feature = "tsify", wasm_bindgen)]
 pub struct Sketch {
     primitives: BTreeMap<u64, PrimitiveCell>,
     primitives_next_id: u64,
     constraints: VecDeque<ConstraintCell>,
 }
 
+// wasm only functions (wrappers)
+// #[cfg(feature = "tsify")]
+#[cfg_attr(feature = "tsify", wasm_bindgen)]
 impl Sketch {
+    #[cfg_attr(feature = "tsify", wasm_bindgen(js_name = "addPoint2"))]
+    pub fn add_point2_wasm(&mut self, x: f64, y: f64) -> Result<UniquePoint2, String> {
+        let point = self.add_point2(x, y).map_err(|e| e.to_string())?;
+        Ok(UniquePoint2(point))
+    }
+
+    #[cfg_attr(feature = "tsify", wasm_bindgen(js_name = "addLine"))]
+    pub fn add_line_wasm(
+        &mut self,
+        start: UniquePoint2,
+        end: UniquePoint2,
+    ) -> Result<UniqueLine, String> {
+        let line = self.add_line(start.0, end.0).map_err(|e| e.to_string())?;
+        Ok(UniqueLine(line))
+    }
+
+    #[cfg_attr(feature = "tsify", wasm_bindgen(js_name = "addArc"))]
+    pub fn add_arc_wasm(
+        &mut self,
+        center: UniquePoint2,
+        radius: f64,
+        clockwise: bool,
+        start_angle: f64,
+        end_angle: f64,
+    ) -> Result<UniqueArc, String> {
+        let arc = self
+            .add_arc(center.0, radius, clockwise, start_angle, end_angle)
+            .map_err(|e| e.to_string())?;
+        Ok(UniqueArc(arc))
+    }
+
+    #[cfg_attr(
+        feature = "tsify",
+        wasm_bindgen(js_name = "constrainPerpendicularLines")
+    )]
+    pub fn constrain_perpendicular_lines_wasm(
+        &mut self,
+        line1: UniqueLine,
+        line2: UniqueLine,
+    ) -> Result<(), String> {
+        let perpendicular_lines = self
+            .constrain_perpendicular_lines(line1.0, line2.0)
+            .map_err(|e| e.to_string())?;
+        Ok(())
+    }
+
+    #[cfg_attr(feature = "tsify", wasm_bindgen(js_name = "constrainParallelLines"))]
+    pub fn constrain_parallel_lines_wasm(
+        &mut self,
+        line1: UniqueLine,
+        line2: UniqueLine,
+    ) -> Result<(), String> {
+        let parallel_lines = self
+            .constrain_parallel_lines(line1.0, line2.0)
+            .map_err(|e| e.to_string())?;
+        Ok(())
+    }
+
+    #[cfg_attr(
+        feature = "tsify",
+        wasm_bindgen(js_name = "constrainDistanceEuclidean")
+    )]
+    pub fn constrain_distance_euclidean_wasm(
+        &mut self,
+        point1: UniquePoint2,
+        point2: UniquePoint2,
+        desired: f64,
+    ) -> Result<(), String> {
+        let distance = self
+            .constrain_distance_euclidean(point1.0, point2.0, desired)
+            .map_err(|e| e.to_string())?;
+        Ok(())
+    }
+
+    #[cfg_attr(feature = "tsify", wasm_bindgen(js_name = "constrainFixPoint"))]
+    pub fn constrain_fix_point_wasm(
+        &mut self,
+        point: UniquePoint2,
+        x: f64,
+        y: f64,
+    ) -> Result<(), String> {
+        let fix_point = self
+            .constrain_fix_point(point.0, Vector2::new(x, y))
+            .map_err(|e| e.to_string())?;
+        Ok(())
+    }
+
+    #[cfg_attr(
+        feature = "tsify",
+        wasm_bindgen(js_name = "constrainAngleBetweenPoints")
+    )]
+    pub fn constrain_angle_between_points_wasm(
+        &mut self,
+        point1: UniquePoint2,
+        point2: UniquePoint2,
+        middle_point: UniquePoint2,
+        desired_angle: f64,
+    ) -> Result<(), String> {
+        let angle = self
+            .constrain_angle_between_points(point1.0, point2.0, middle_point.0, desired_angle)
+            .map_err(|e| e.to_string())?;
+        Ok(())
+    }
+}
+
+// mutual functions (rust & wasm)
+#[cfg_attr(feature = "tsify", wasm_bindgen)]
+impl Sketch {
+    #[cfg_attr(feature = "tsify", wasm_bindgen(constructor))]
     pub fn new() -> Self {
         Self::default()
     }
+}
 
+impl Sketch {
     pub fn add_primitive(&mut self, primitive: PrimitiveCell) -> Result<u64, ISOTopeError> {
         // Make sure all referenced primitives are added to the sketch before the primitive
         for reference in primitive.borrow().references().iter() {

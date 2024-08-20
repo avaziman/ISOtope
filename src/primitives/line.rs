@@ -7,8 +7,15 @@ use serde::{Deserialize, Serialize};
 #[cfg(feature = "tsify")]
 use tsify::Tsify;
 
+#[cfg(feature = "tsify")]
+use wasm_bindgen::prelude::*;
+
 use super::point2::Point2;
 use super::{PrimitiveCell, PrimitiveLike};
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[cfg_attr(feature = "tsify", wasm_bindgen)]
+pub struct UniqueLine(pub(crate) Rc<RefCell<Line>>);
 
 #[derive(Debug, Clone, PartialEq, PartialOrd, Serialize, Deserialize)]
 #[cfg_attr(feature = "tsify", derive(Tsify))]

@@ -7,6 +7,10 @@ use crate::solvers::line_search::{line_search_wolfe, LineSearchError};
 
 use super::Solver;
 
+#[cfg(feature = "tsify")]
+use wasm_bindgen::prelude::*;
+
+#[cfg_attr(feature = "tsify", wasm_bindgen)]
 pub struct BFGSSolver {
     max_iterations: usize,
     min_loss: f64,
@@ -19,7 +23,9 @@ impl Default for BFGSSolver {
     }
 }
 
+#[cfg_attr(feature = "tsify", wasm_bindgen)]
 impl BFGSSolver {
+    #[cfg_attr(feature = "tsify", wasm_bindgen(constructor))]
     pub fn new() -> Self {
         Self {
             max_iterations: 1000,
@@ -34,6 +40,16 @@ impl BFGSSolver {
             min_loss,
             gradient_threshold,
         }
+    }
+}
+
+#[cfg_attr(feature = "tsify", wasm_bindgen)]
+impl BFGSSolver {
+    #[cfg_attr(feature = "tsify", wasm_bindgen(js_name = "solve"))]
+    pub fn solve_wasm(&self, sketch: &mut Sketch) -> Result<(), String> {
+        (self as &dyn Solver)
+            .solve(sketch)
+            .map_err(|e| e.to_string())
     }
 }
 

@@ -9,6 +9,13 @@ use tsify::Tsify;
 
 use super::{point2::Point2, PrimitiveCell, PrimitiveLike};
 
+#[cfg(feature = "tsify")]
+use wasm_bindgen::prelude::*;
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[cfg_attr(feature = "tsify", wasm_bindgen)]
+pub struct UniqueArc(pub(crate) Rc<RefCell<Arc>>);
+
 #[derive(Debug, Clone, PartialEq, PartialOrd, Serialize, Deserialize)]
 #[cfg_attr(feature = "tsify", derive(Tsify))]
 #[cfg_attr(feature = "tsify", tsify(into_wasm_abi, from_wasm_abi))]
